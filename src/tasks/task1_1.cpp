@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
         "Average concentration p_avg = {}\n",
         averageConcentration);
   }
-  catch (const std::exception& exception)
+  catch (const std::exception & exception)
   {
     std::cerr << "Error: " << exception.what() << '\n';
     return 1;
