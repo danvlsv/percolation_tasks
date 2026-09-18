@@ -40,12 +40,7 @@ public:
       throw std::invalid_argument("Occupation probability p must be in [0, 1].");
     }
 
-    FillRandom();
-  }
-
-  void FillRandom()
-  {
-    FillRandom(m_probability);
+    FillRandom(occupancyProbability);
   }
 
   void FillRandom(double occupancyProbability)
@@ -54,17 +49,45 @@ public:
       throw std::invalid_argument("Occupation probability p must be in [0, 1].");
     }
 
-    m_probability = occupancyProbability;
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    const size_t totalSites = m_size * m_size;
+    const size_t fieldsToFill = static_cast<size_t>(
+      std::llround(occupancyProbability * static_cast<double>(totalSites)));
 
+    Reset();
+
+    std::vector<size_t> chosen;
+    chosen.reserve(fieldsToFill);
+    for (size_t i = 0; i < totalSites; ++i) {
+      if (chosen.size() < fieldsToFill) {
+        chosen.push_back(i);
+      } else {
+        std::uniform_int_distribution<size_t> dist(0, i);
+        const size_t j = dist(m_generator);
+        if (j < fieldsToFill) {
+          chosen[j] = i;
+        }
+      }
+    }
+
+    m_probability = occupancyProbability;
+    for (const auto index : chosen) {
+      m_matrix(index / m_size, index % m_size) = 1;
+    }
+  }
+
+  inline void Reset() noexcept
+  {
     for (size_t row = 0; row < m_size; ++row) {
       for (size_t column = 0; column < m_size; ++column) {
-        m_matrix(row, column) = distribution(m_generator) < m_probability ? 1 : 0;
+        m_matrix(row, column) = 0;
       }
     }
   }
 
-  const Matrix2D<int>& Matrix() const { return m_matrix; }
+  const Matrix2D<int> & Matrix() const
+  {
+    return m_matrix;
+  }
 
   double OccupiedFraction() const
   {
@@ -84,8 +107,15 @@ public:
     return occupied;
   }
 
-  size_t Size() const { return m_size; }
-  double Probability() const { return m_probability; }
+  inline size_t GetSize() const
+  {
+    return m_size;
+  }
+
+  inline double GetProbability() const
+  {
+    return m_probability;
+  }
 
 private:
   size_t m_size;
